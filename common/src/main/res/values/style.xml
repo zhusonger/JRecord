@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="CommonAppCompatTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowAnimationStyle">@style/DefaultActivityAnimationStyle</item>
+    </style>
+    <style name="CommonAppTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="windowActionBar">false</item>
+        <item name="android:windowAnimationStyle">@style/DefaultActivityAnimationStyle</item>
+    </style>
+    <style name="DefaultActivityAnimationStyle" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/common_activity_transition_enter_right_anim</item>
+        <item name="android:activityOpenExitAnimation">@anim/common_activity_transition_exit_left_anim</item>
+        <item name="android:activityCloseEnterAnimation">@anim/common_activity_transition_enter_left_anim</item>
+        <item name="android:activityCloseExitAnimation">@anim/common_activity_transition_exit_right_anim</item>
+    </style>
+</resources>
