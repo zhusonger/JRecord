@@ -27,7 +27,7 @@ task clean(type: Delete) {
 }
 
 ext {
-    compileSdkVersion=27
-    targetSdkVersion=27
-    appcompat_v7='27.1.1'
+    compileSdkVersion=26
+    targetSdkVersion=26
+    appcompat_v7='26.1.0'
 }

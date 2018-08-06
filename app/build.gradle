@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.jrecord.jrecord"
+        applicationId "com.jrecord"
         minSdkVersion 19
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -27,4 +27,5 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
     implementation project(":common")
+    implementation project(":record")
 }

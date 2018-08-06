@@ -11,7 +11,7 @@ import android.os.Parcelable;
  */
 public class AudioConfig implements Parcelable {
     public static final ThreadGroup AUDIO_GROUP = new ThreadGroup("audio");
-    private int audioSource = MediaRecorder.AudioSource.DEFAULT;
+    private int audioSource = MediaRecorder.AudioSource.MIC;
     /*
      8khz：电话等使用，对于记录人声已经足够使用。
 
@@ -132,5 +132,34 @@ public class AudioConfig implements Parcelable {
                 ", bitRate=" + bitRate +
                 ", mime='" + mime + '\'' +
                 '}';
+    }
+
+    public int getBytesPerFrame() {
+        int bytesForFormat = 1;
+        switch (audioFormat) {
+            case AudioFormat.ENCODING_PCM_8BIT:
+                bytesForFormat = 1;
+            case AudioFormat.ENCODING_PCM_16BIT:
+            case AudioFormat.ENCODING_IEC61937:
+            case AudioFormat.ENCODING_DEFAULT:
+                bytesForFormat = 2;
+            case AudioFormat.ENCODING_PCM_FLOAT:
+                bytesForFormat = 4;
+            case AudioFormat.ENCODING_INVALID:
+            default:
+//                throw new IllegalArgumentException("Bad audio format " + audioFormat);
+        }
+
+        return bytesForFormat;
+    }
+
+    public int getChannelCount() {
+        if (channelConfig == AudioFormat.CHANNEL_IN_MONO) {
+            return 1;
+        } else if(channelConfig == AudioFormat.CHANNEL_IN_STEREO) {
+            return 2;
+        }
+
+        return 1;
     }
 }

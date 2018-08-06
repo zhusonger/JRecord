@@ -1,6 +1,7 @@
 package com.jrecord.common;
 
 import android.os.Environment;
+import android.os.Looper;
 import android.util.Log;
 
 import java.io.BufferedWriter;
@@ -8,6 +9,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Queue;
@@ -319,12 +321,13 @@ public class ILog {
          */
         if (traceElements != null && traceElements.length > 4) {
             StackTraceElement traceElement = traceElements[4];
-            msg += " ["+traceElement.getClassName()+"."+traceElement.getMethodName()+"("+traceElement.getFileName()+":"+traceElement.getLineNumber()+")]";
+            msg += " ("+traceElement.getFileName()+":"+traceElement.getLineNumber()+")";
         }
 
         return msg;
     }
     private static LogWriter sWriter;
+    private static SimpleDateFormat hmsDf = new SimpleDateFormat("HH:mm:ss", Locale.CHINESE);
     private static void writeLogToFile(String tag, String text) {
         writeLogToFile(tag, text, null);
     }
@@ -333,7 +336,7 @@ public class ILog {
         if (null != throwable) {
             msg = text + "\n" + Log.getStackTraceString(throwable);
         }
-        String logText = String.format("%s %s : %s", AppUtils.getCurrentTime(), tag, msg);
+        String logText = String.format("%s %s : %s", hmsDf.format(Calendar.getInstance().getTime()), tag, msg);
 
         if (null == sWriter) {
             sWriter = new LogWriter();
@@ -348,11 +351,16 @@ public class ILog {
     static class LogWriter extends Thread {
         private final Queue<String> logs = new LinkedBlockingQueue<>(500);
         public LogWriter() {
-            super("LogWriter");
+            // 指定在主线程组中运行
+            super(Looper.getMainLooper().getThread().getThreadGroup(), "LogWriter");
         }
 
         public void addLog(String text) {
             logs.add(text);
+            // 有新日志来就唤醒锁
+            synchronized (logs) {
+                logs.notifyAll();
+            }
         }
 
         @Override
@@ -378,22 +386,26 @@ public class ILog {
                     file.createNewFile();
                 }
 
+                SimpleDateFormat current = new SimpleDateFormat("HH:mm:ss", Locale.CHINESE);
                 fw = new FileWriter(file, true);
                 bw = new BufferedWriter(fw);
+                bw.write("======== App Start at "+current.format(date)+"===========");
+                bw.newLine();
                 while (true) {
+                    // 没有日志来就等待
                     if (logs.isEmpty()) {
                         synchronized (logs) {
-                            Thread.sleep(10000);
+                            logs.wait();
                         }
                     } else {
-                        String msg = null;
+                        String msg;
                         while ((msg = logs.poll()) != null) {
                             bw.write(msg);
                             bw.newLine();
+                            bw.flush();
                         }
                     }
                 }
-
             } catch (Exception e) {
                 Log.e("LogWriter", "LogWriter Error ", e);
             } finally {
