@@ -280,7 +280,7 @@ public class AudioEncoder implements Runnable {
         }
     }
 
-    private void onAudioEncodeFrame(int flags, long durationNs, byte[] buffer) {
+    private void onAudioEncodeFrame(int flags, long presentationTimeUs, byte[] buffer) {
         Set<String> keys = mListeners.keySet();
         Iterator<String> iterator = keys.iterator();
         while (iterator.hasNext()) {
@@ -291,7 +291,7 @@ public class AudioEncoder implements Runnable {
                 continue;
             }
 
-            listener.onAudioEncodeFrame(flags, durationNs, buffer);
+            listener.onAudioEncodeFrame(flags, presentationTimeUs * 1000, buffer);
         }
     }
 

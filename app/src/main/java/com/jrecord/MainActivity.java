@@ -38,7 +38,7 @@ public class MainActivity extends BaseActivity {
 
             @Override
             public void onAudioEncodeFrame(int flags, long durationNs, byte[] buffer) {
-                ILog.d(TAG, "onAudioEncodeFrame : flags = " + flags+", durationNs = " + durationNs/1000 +", buffer = " + buffer.length);
+//                ILog.d(TAG, "onAudioEncodeFrame : flags = " + flags+", durationNs = " + durationNs +", buffer = " + buffer.length);
             }
 
             @Override
@@ -55,7 +55,7 @@ public class MainActivity extends BaseActivity {
 
             @Override
             public void onAudioRecordFrame(long durationNs, byte[] buffer, boolean endOfStream) {
-                ILog.d(TAG, "onAudioRecordFrame : durationNs = " + durationNs +", buffer = " + buffer.length+", endOfStream = " + endOfStream);
+//                ILog.d(TAG, "onAudioRecordFrame : durationNs = " + durationNs +", buffer = " + buffer.length+", endOfStream = " + endOfStream);
                 AudioEncoder.getInstance().encodePCM(durationNs, buffer, endOfStream);
             }
 
