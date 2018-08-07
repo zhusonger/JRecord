@@ -26,7 +26,7 @@
         android:id="@+id/btn_audio_start"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="start"
+        android:text="开始录制"
         app:layout_constraintTop_toBottomOf="@id/tv_tab_audio"
         android:onClick="startAudioRecord"
         />
@@ -34,11 +34,41 @@
         android:id="@+id/btn_audio_stop"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="stop"
+        android:text="停止录制"
         app:layout_constraintTop_toBottomOf="@id/tv_tab_audio"
         app:layout_constraintLeft_toRightOf="@id/tv_tab_audio"
         android:layout_marginLeft="20dp"
         android:onClick="stopAudioRecord"
         />
+    <Button
+        android:id="@+id/btn_audio_play"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="播放"
+        app:layout_constraintTop_toBottomOf="@id/tv_tab_audio"
+        app:layout_constraintLeft_toRightOf="@id/btn_audio_stop"
+        android:layout_marginLeft="20dp"
+        android:onClick="playAudioRecord"
+        />
 
+    <RadioGroup
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/btn_audio_start"
+        android:orientation="horizontal"
+        >
+        <RadioButton
+            android:id="@+id/rb_mono"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="单声道"
+            android:checked="true"
+            />
+        <RadioButton
+            android:id="@+id/rb_stereo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="双声道"
+            />
+    </RadioGroup>
 </android.support.constraint.ConstraintLayout>

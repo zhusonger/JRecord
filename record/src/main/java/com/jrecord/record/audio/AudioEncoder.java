@@ -1,5 +1,6 @@
 package com.jrecord.record.audio;
 
+import android.media.AudioRecord;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Handler;
@@ -140,7 +141,6 @@ public class AudioEncoder implements Runnable {
         mPCMPool.release(data);
     }
 
-    private MediaCodec.BufferInfo mOutputInfo = new MediaCodec.BufferInfo();
     /**
      * 编码PCM数据
      * @param durationNs 原始PCM数据的时长
@@ -205,8 +205,9 @@ public class AudioEncoder implements Runnable {
 
             // Part2: 获取编码后的AAC数据
             while (true) {
+                MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
                 // 获取输出缓冲块
-                int res = mEncoder.dequeueOutputBuffer(mOutputInfo, 0);
+                int res = mEncoder.dequeueOutputBuffer(info, 0);
 
                 if (res == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                     MediaFormat outputFormat = mEncoder.getOutputFormat();
@@ -224,14 +225,14 @@ public class AudioEncoder implements Runnable {
                     int capacity = buffer.capacity();
                     int dataLen = buffer.remaining();
                     if (null == mAACData || mAACData.length != capacity) {
+                        ILog.d(TAG, "NEW mAACData : capacity = " + capacity+ ", mAACData.length = " + (mAACData != null ? mAACData.length : 0));
                         mAACData = new byte[capacity];
                     }
-                    buffer.get(mAACData, mOutputInfo.offset, dataLen);
-                    long presentationTimeUs = mOutputInfo.presentationTimeUs;
-                    int flags = mOutputInfo.flags;
+                    buffer.get(mAACData, info.offset, dataLen);
+                    int flags = info.flags;
                     // 返回编码好的aac数据，注意这个回调跟pcm数据一样，使用的时候拷贝源数据,
                     // 不要直接使用，在下次更新这个数据的时候，会把这个数据污染掉
-                    onAudioEncodeFrame(flags, presentationTimeUs, mAACData);
+                    onAudioEncodeFrame(info, mAACData);
                     mEncoder.releaseOutputBuffer(outputIndex, false);
                     if ((flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                         if(!endOfStream) {
@@ -301,7 +302,7 @@ public class AudioEncoder implements Runnable {
         }
     }
 
-    private void onAudioEncodeFrame(int flags, long presentationTimeUs, byte[] buffer) {
+    private void onAudioEncodeFrame(MediaCodec.BufferInfo info, byte[] buffer) {
         Set<String> keys = mListeners.keySet();
         Iterator<String> iterator = keys.iterator();
         while (iterator.hasNext()) {
@@ -312,7 +313,7 @@ public class AudioEncoder implements Runnable {
                 continue;
             }
 
-            listener.onAudioEncodeFrame(flags, presentationTimeUs * 1000, buffer);
+            listener.onAudioEncodeFrame(info, buffer);
         }
     }
 
@@ -352,11 +353,20 @@ public class AudioEncoder implements Runnable {
             int channelCount = mConfig.getChannelCount();
             int bitRate = mConfig.bitRate();
 
+            int minBufferSize = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat);
+            // 每一帧字节数组
+            int bufferSizeInBytes = mConfig.bufferSizeInBytes();
+            if (minBufferSize > bufferSizeInBytes) {
+                bufferSizeInBytes = (int) Math.ceil((float) minBufferSize / AudioConfig.UNIT_BUFFER_SIZE_IN_BYTES) * AudioConfig.UNIT_BUFFER_SIZE_IN_BYTES;
+            }
+
             String mine = mConfig.mime();
             MediaFormat format = MediaFormat.createAudioFormat(mine, sampleRateInHz, channelCount);
             format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
-
+            // 设置编码器输入缓冲区的大小, 否则PCM裸数据比输入缓冲区大就会报BufferOverFlow异常
+            format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, bufferSizeInBytes);
             mEncoder = MediaCodec.createEncoderByType(mine);
+
             mEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
             mEncoder.start();
             synchronized (mFence) {

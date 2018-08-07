@@ -11,6 +11,7 @@ import android.os.Parcelable;
  */
 public class AudioConfig implements Parcelable {
     public static final ThreadGroup AUDIO_GROUP = new ThreadGroup("audio");
+    public static final int UNIT_BUFFER_SIZE_IN_BYTES = 1024; // 音频单次采样数据最小单位
     private int audioSource = MediaRecorder.AudioSource.MIC;
     /*
      8khz：电话等使用，对于记录人声已经足够使用。
@@ -28,7 +29,7 @@ public class AudioConfig implements Parcelable {
     private int audioFormat = AudioFormat.ENCODING_PCM_16BIT; // 音频格式
     private int bitRate = 64000; // 比特率 64kb/s aac:64kb/s mp3:128kb/s
     private String mime = "audio/mp4a-latm";
-
+    private int bufferSizeInBytes = 4096;    // 每次采样录音数据字节大小, byte
     public AudioConfig() {
     }
 
@@ -122,16 +123,13 @@ public class AudioConfig implements Parcelable {
         return this;
     }
 
-    @Override
-    public String toString() {
-        return "AudioConfig{" +
-                "audioSource=" + audioSource +
-                ", sampleRateInHz=" + sampleRateInHz +
-                ", channelConfig=" + channelConfig +
-                ", audioFormat=" + audioFormat +
-                ", bitRate=" + bitRate +
-                ", mime='" + mime + '\'' +
-                '}';
+    public int bufferSizeInBytes() {
+        return bufferSizeInBytes;
+    }
+
+    public AudioConfig bufferSizeInBytes(int bufferSizeInBytes) {
+        this.bufferSizeInBytes = bufferSizeInBytes;
+        return this;
     }
 
     public int getBytesPerFrame() {
@@ -139,12 +137,15 @@ public class AudioConfig implements Parcelable {
         switch (audioFormat) {
             case AudioFormat.ENCODING_PCM_8BIT:
                 bytesForFormat = 1;
+                break;
             case AudioFormat.ENCODING_PCM_16BIT:
             case AudioFormat.ENCODING_IEC61937:
             case AudioFormat.ENCODING_DEFAULT:
                 bytesForFormat = 2;
+                break;
             case AudioFormat.ENCODING_PCM_FLOAT:
                 bytesForFormat = 4;
+                break;
             case AudioFormat.ENCODING_INVALID:
             default:
 //                throw new IllegalArgumentException("Bad audio format " + audioFormat);
@@ -161,5 +162,17 @@ public class AudioConfig implements Parcelable {
         }
 
         return 1;
+    }
+
+    @Override
+    public String toString() {
+        return "AudioConfig{" +
+                "audioSource=" + audioSource +
+                ", sampleRateInHz=" + sampleRateInHz +
+                ", channelConfig=" + channelConfig +
+                ", audioFormat=" + audioFormat +
+                ", bitRate=" + bitRate +
+                ", mime='" + mime + '\'' +
+                '}';
     }
 }

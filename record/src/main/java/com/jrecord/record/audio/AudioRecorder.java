@@ -169,13 +169,20 @@ public class AudioRecorder implements Runnable {
             int sampleRateInHz = mConfig.sampleRateInHz(); // 44100
             int channelConfig = mConfig.channelConfig(); // 双声道
             int audioFormat = mConfig.audioFormat(); // pcm16
-            int bufferSizeInBytes = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat);
-
-            int bytesPerFrame = mConfig.getBytesPerFrame(); // 每一帧字节数 pcm16(2byte)
+            int minBufferSize = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat);
+            // 每一帧字节数组
+            int bufferSizeInBytes = mConfig.bufferSizeInBytes();
+            if (minBufferSize > bufferSizeInBytes) {
+                bufferSizeInBytes = (int) Math.ceil((float) minBufferSize / AudioConfig.UNIT_BUFFER_SIZE_IN_BYTES) * AudioConfig.UNIT_BUFFER_SIZE_IN_BYTES;
+            }
+            mConfig.bufferSizeInBytes(bufferSizeInBytes);
+            //
+            int bytesPerFrame = mConfig.getBytesPerFrame() * mConfig.getChannelCount(); // 每一帧字节数 pcm16(2byte) * 声道数
             int frameSize = bufferSizeInBytes / bytesPerFrame; // 每个缓冲区存储的帧数
-
             mPCMBuffer = new byte[bufferSizeInBytes];
             mRecord = new AudioRecord(audioSource, sampleRateInHz, channelConfig, audioFormat, bufferSizeInBytes);
+
+            ILog.d(TAG, "bufferSizeInBytes = " + bufferSizeInBytes);
             mRecord.setRecordPositionUpdateListener(new AudioRecord.OnRecordPositionUpdateListener() {
                 // 记录开始录音的时间
                 long startTime = -1; // ns
