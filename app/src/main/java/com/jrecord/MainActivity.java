@@ -1,6 +1,7 @@
 package com.jrecord;
 
 import android.media.MediaFormat;
+import android.media.MediaMuxer;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.view.View;
@@ -16,6 +17,9 @@ import com.jrecord.record.audio.IAudioRecorderListener;
 
 public class MainActivity extends BaseActivity {
 
+    private MediaMuxer muxer;
+    private int audioTrack;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -23,6 +27,11 @@ public class MainActivity extends BaseActivity {
     }
 
     public void startAudioRecord(View view) {
+        /*try {
+            muxer = new MediaMuxer(Environment.getExternalStorageDirectory()+"/jrecord.mp4", MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }*/
         AudioConfig config = new AudioConfig();
         config.bitRate(128000);
         AudioEncoder.getInstance().addListener(TAG, new IAudioEncoderListener() {
@@ -34,11 +43,14 @@ public class MainActivity extends BaseActivity {
             @Override
             public void onAudioEncodeFormat(MediaFormat format) {
                 ILog.d(TAG, "onAudioEncodeFormat : " + format.getString(MediaFormat.KEY_MIME));
+//                audioTrack = muxer.addTrack(format);
+//                muxer.start();
             }
 
             @Override
             public void onAudioEncodeFrame(int flags, long durationNs, byte[] buffer) {
 //                ILog.d(TAG, "onAudioEncodeFrame : flags = " + flags+", durationNs = " + durationNs +", buffer = " + buffer.length);
+//                muxer.writeSampleData(audioTrack, );
             }
 
             @Override

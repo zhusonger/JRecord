@@ -4,6 +4,7 @@ import android.media.AudioRecord;
 import android.os.Looper;
 import android.text.TextUtils;
 
+import com.jrecord.common.AppUtils;
 import com.jrecord.common.ILog;
 
 import java.util.Iterator;
@@ -246,7 +247,8 @@ public class AudioRecorder implements Runnable {
 
         // 清除回调的引用
         mListeners.clear();
-
+        mConfig = null;
+        mPCMBuffer = null;
         ILog.v(TAG, "AudioRecorder thread stopped");
     }
 
@@ -259,6 +261,8 @@ public class AudioRecorder implements Runnable {
                 mRecord.setRecordPositionUpdateListener(null);
                 mRecord.stop();
                 mRecord.release();
+                // 移除setRecordPositionUpdateListener导致mInitializationLooper引用的线程Looper，但是没有释放的泄漏
+                AppUtils.setNull(mRecord, "mInitializationLooper");
                 mRecord = null;
             } catch (Exception e) {
                 ILog.e(TAG, "stop record", e);

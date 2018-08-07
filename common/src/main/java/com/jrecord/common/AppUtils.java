@@ -42,6 +42,7 @@ import com.jrecord.common.data.BasePreference;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.lang.reflect.Field;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
@@ -69,7 +70,7 @@ public class AppUtils {
         sApplication = application;
         // share preference
         BasePreference.init(application);
-        ILog.e(TAG, "init application");
+        ILog.d(TAG, "init application");
         application.registerActivityLifecycleCallbacks(new DefaultActivityLifeCallback());
     }
 
@@ -716,5 +717,20 @@ public class AppUtils {
         Pattern p = Pattern.compile("[a-zA-Z]");
         Matcher m = p.matcher(s);
         return m.matches();
+    }
+
+    public static void setNull(Object object, String name) {
+        if (null == object || TextUtils.isEmpty(name)) {
+            return;
+        }
+        try {
+            Field field = object.getClass().getDeclaredField(name);
+            if (null == field) {
+                return;
+            }
+            field.setAccessible(true);
+            field.set(object, null);
+            field.setAccessible(false);
+        } catch (Exception e) {}
     }
 }

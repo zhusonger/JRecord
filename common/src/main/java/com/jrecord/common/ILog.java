@@ -352,7 +352,7 @@ public class ILog {
         private final Queue<String> logs = new LinkedBlockingQueue<>(500);
         public LogWriter() {
             // 指定在主线程组中运行
-            super(Looper.getMainLooper().getThread().getThreadGroup(), "LogWriter");
+            super(Looper.getMainLooper().getThread().getThreadGroup(),"LogWriter");
         }
 
         public void addLog(String text) {
@@ -372,6 +372,7 @@ public class ILog {
         @Override
         public void run() {
             super.run();
+            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
             BufferedWriter bw = null;
             FileWriter fw = null;
             try {

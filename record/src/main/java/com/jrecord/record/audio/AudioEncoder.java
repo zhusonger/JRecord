@@ -8,6 +8,7 @@ import android.os.Message;
 import android.support.v4.util.Pools;
 import android.text.TextUtils;
 
+import com.jrecord.common.AppUtils;
 import com.jrecord.common.ILog;
 import com.jrecord.record.audio.data.PCMData;
 
@@ -121,6 +122,23 @@ public class AudioEncoder implements Runnable {
             return mEncoding;
         }
     }
+    private Pools.SynchronizedPool<PCMData> mPCMPool = new Pools.SynchronizedPool<PCMData>(10);
+    private PCMData acquirePCMData() {
+        PCMData pcmData = mPCMPool.acquire();
+        if (null == pcmData) {
+            pcmData = new PCMData();
+        }
+        return pcmData;
+    }
+    private void releasePCMData(PCMData data) {
+        if (null == data) {
+            return;
+        }
+        data.endOfStream = false;
+        data.durationNs = 0;
+        data.data = null;
+        mPCMPool.release(data);
+    }
 
     private MediaCodec.BufferInfo mOutputInfo = new MediaCodec.BufferInfo();
     /**
@@ -142,7 +160,10 @@ public class AudioEncoder implements Runnable {
                 return;
             }
         }
-        PCMData data = new PCMData(durationNs, pcm, endOfStream);
+        PCMData data = acquirePCMData();
+        data.durationNs = durationNs;
+        data.data = pcm;
+        data.endOfStream = endOfStream;
         Message message = mHandler.obtainMessage(WHAT_ENCODE);
         message.obj = data;
         message.sendToTarget();
@@ -358,18 +379,33 @@ public class AudioEncoder implements Runnable {
 
         onAudioEncodeStop();
         ILog.v(TAG, "AudioEncoder thread stopped");
+        mListeners.values().clear();
+        mListeners.clear();
+        mConfig = null;
+        // 清空同步池中的资源
+        do {
+            mBufferPool.acquire();
+        } while (mBufferPool.acquire() != null);
+        PCMData data;
+        while ((data = mPCMPool.acquire()) != null) {
+            data.data = null;
+            data.durationNs = 0;
+            data.endOfStream = false;
+        }
+        mAACData = null;
+        mHandler = null;
     }
 
     private void stopEncoding() {
         if (null != mEncoder) {
             mEncoder.stop();
             mEncoder.release();
+            // 释放MediaCodec对当前线程的Looper引用
+            AppUtils.setNull(mEncoder, "mCallbackHandler");
+            AppUtils.setNull(mEncoder, "mOnFrameRenderedHandler");
+            AppUtils.setNull(mEncoder, "mEventHandler");
             mEncoder = null;
         }
-        // 清空同步池中的资源
-        do {
-            mBufferPool.acquire();
-        } while (mBufferPool.acquire() != null);
     }
 
     private static final int WHAT_ENCODE = 1;
@@ -393,7 +429,9 @@ public class AudioEncoder implements Runnable {
             if (what == WHAT_ENCODE) {
                 PCMData pcm = (PCMData) msg.obj;
                 encoder._encodePCM(pcm.durationNs, pcm.data, pcm.endOfStream);
+                encoder.releasePCMData(pcm);
             } else if (what == WHAT_STOP) {
+                mRef.clear();
                 encoder.stopEncoding();
                 Looper myLooper = Looper.myLooper();
                 if (null != myLooper) {
